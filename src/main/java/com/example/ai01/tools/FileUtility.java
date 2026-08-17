@@ -1,0 +1,47 @@
+package com.example.ai01.tools;
+
+import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Component
+public class FileUtility {
+    private FileUtility(MeterRegistry meterRegistry) {
+    }
+
+    public static boolean writeDownRules(Map<String, String> rules, String path) {
+
+        List<String> rs = new ArrayList();
+
+        rs.add("<div dir=\"ltr\" style=\"text-align: right;\">");
+
+        var fileContent = rules
+                .keySet()
+                .stream()
+                .map((key) -> String.format("%s : %s \n", key, rules.get(key)))
+                .collect(Collectors.toList());
+
+        rs.addAll(fileContent);
+        rs.add("</div>");
+
+        var pt = Path.of(path);
+
+        try {
+            Files.write(pt, fileContent, StandardCharsets.UTF_8);
+        } catch (IOException ex) {
+            System.out.println(ex
+                    .getMessage());
+            return false;
+        }
+
+        return true;
+    }
+}

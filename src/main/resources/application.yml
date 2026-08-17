@@ -1,0 +1,33 @@
+server:
+  port: 8587
+  error:
+    whitelabel:
+      enabled: false
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics
+
+  endpoint:
+    health:
+      show-components: always
+      show-details: always
+
+langchain4j:
+  open-ai:
+    chat-model:
+      api-key: ${DEEPSEEK_API_KEY}
+      base-url: https://api.deepseek.com
+      model-name: deepseek-chat
+      temperature: 0
+      max-retries: 0
+
+app:
+  workspace:
+    root-path: /home/temp_files/ai-agent
+    architecture-result-md-file: /home/temp_files/architectural-result-map-rules.md
+    path: /home/temp_files/
+  report:
+    is-json: true
