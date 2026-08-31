@@ -17,6 +17,25 @@ public class FileUtility {
     private FileUtility(MeterRegistry meterRegistry) {
     }
 
+    public static String loadFile(String filePath) {
+        Path path = Path.of(filePath);
+        String content = "";
+        try {
+            String fileName =
+                    path.getFileName().toString();
+            content =
+                    Files.readString(
+                            path,
+                            StandardCharsets.UTF_8
+                    );
+
+        } catch (IOException exception) {
+            //
+            content = "error";
+        }
+        return content;
+    }
+
     public static boolean writeDownRules(Map<String, String> rules, String path) {
 
         List<String> rs = new ArrayList();
