@@ -40,13 +40,14 @@ services:
 
     volumes:
       - "C:/agents/temp_files:/home/temp_files"
-      - n8n_data:/home/node/.n8n
+      - aitest01_n8n_data:/home/node/.n8n
 
     networks:
       - agent-network
 
 volumes:
-  n8n_data:
+  aitest01_n8n_data:
+    external: true
 
 networks:
   agent-network:

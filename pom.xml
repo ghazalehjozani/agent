@@ -44,6 +44,13 @@
             <artifactId>spring-boot-starter-test</artifactId>
         </dependency>
 
+        <dependency>
+            <groupId>com.github.javaparser</groupId>
+            <artifactId>javaparser-core</artifactId>
+            <version>3.26.2</version>
+        </dependency>
+
+
         <!--<dependency>
                         <groupId>dev.langchain4j</groupId>
                         <artifactId>langchain4j-ollama-spring-boot-starter</artifactId>
