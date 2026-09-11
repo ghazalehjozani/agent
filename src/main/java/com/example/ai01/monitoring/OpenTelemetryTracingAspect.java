@@ -19,21 +19,57 @@ import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+
+
+/**
+ * Spring Boot
+ * │
+ * ▼
+ * OpenTelemetry Collector
+ * │
+ * ┌───────────────┼───────────────┐
+ * │               │               │
+ * ▼               ▼               ▼
+ * Phoenix         Langfuse        Grafana
+ */
+
+
+/*
+
+┌───────────────────────────┐
+│ ai-agent                  │
+│ Spring Boot               │
+└─────────────┬─────────────┘
+              │
+              │ 4318
+              ▼
+┌───────────────────────────┐
+│ otel-collector            │
+└─────────────┬─────────────┘
+              │
+              │ OTLP
+              ▼
+┌───────────────────────────┐
+│ phoenix                   │
+│                           │
+│ Trace Storage             │
+│ Visual UI                 │
+└───────────────────────────┘
+
+ */
 
 @Aspect
 @Component
 public class OpenTelemetryTracingAspect {
     private static final String DEFAULT_INSTRUMENTATION_NAME = "com.example.ai01";
     private final Tracer tracer;
-
     public OpenTelemetryTracingAspect(OpenTelemetry openTelemetry) {
         this.tracer = openTelemetry.getTracer(DEFAULT_INSTRUMENTATION_NAME);
     }
-
-    @Around("@annotation(com.example.ai01.monitoring.TraceOperation) " +
-            "|| @within(com.example.ai01.monitoring.TraceOperation)")
+    @Around("@annotation(com.example.ai01.monitoring.TraceOperation)")
     public Object trace(ProceedingJoinPoint joinPoint) throws Throwable {
 
         TraceMetadata traceMetadata = resolveTraceMetadata(joinPoint);
@@ -86,25 +122,13 @@ public class OpenTelemetryTracingAspect {
                 return traceAsyncResult(stage, span, spanContext);
             }
 
-
-            span.setStatus(
-                    StatusCode.OK
-            );
-
-
+            span.setStatus(StatusCode.OK);
             span.end();
-
             return result;
 
         } catch (Throwable throwable) {
-
-            recordError(
-                    span,
-                    throwable
-            );
-
+            recordError(span, throwable);
             span.end();
-
             throw throwable;
         }
     }
@@ -117,41 +141,45 @@ public class OpenTelemetryTracingAspect {
     private CompletionStage<?> traceAsyncResult(
             CompletionStage<?> stage,
             Span span,
-            Context spanContext
-    ) {
+            Context spanContext) {
 
-        return stage.whenComplete(
-                (result, throwable) -> {
+        CompletableFuture<Object> propagatedFuture =
+                new CompletableFuture<>();
 
-                    try (Scope ignored =
-                                 spanContext.makeCurrent()) {
+        stage.whenComplete((result, throwable) -> {
 
-                        if (throwable != null) {
+            try (Scope ignored =
+                         spanContext.makeCurrent()) {
 
-                            Throwable error =
-                                    unwrap(
-                                            throwable
-                                    );
+                if (throwable != null) {
 
+                    Throwable error =
+                            unwrap(throwable);
 
-                            recordError(
-                                    span,
-                                    error
-                            );
+                    recordError(span, error);
 
-                        } else {
+                    propagatedFuture.completeExceptionally(
+                            error
+                    );
 
-                            span.setStatus(
-                                    StatusCode.OK
-                            );
-                        }
+                } else {
 
-                    } finally {
+                    span.setStatus(StatusCode.OK);
 
-                        span.end();
-                    }
+                    /*
+                     * Future در حالی کامل می‌شود که Span
+                     * هنوز Current است. بنابراین continuationهای
+                     * بعدی همین Trace را به ارث می‌برند.
+                     */
+                    propagatedFuture.complete(result);
                 }
-        );
+
+            } finally {
+                span.end();
+            }
+        });
+
+        return propagatedFuture;
     }
 
 
@@ -159,131 +187,66 @@ public class OpenTelemetryTracingAspect {
     // Event mode
     // =========================================================
 
-    private Object executeAsEvent(
-            ProceedingJoinPoint joinPoint,
-            TraceMetadata metadata
-    ) throws Throwable {
+    private Object executeAsEvent(ProceedingJoinPoint joinPoint, TraceMetadata metadata) throws Throwable {
 
-        Span currentSpan =
-                Span.current();
-
-
-        long start =
-                System.nanoTime();
-
-
-        currentSpan.addEvent(
-                metadata.spanName()
-                        + ".started",
+        Span currentSpan = Span.current();
+        long start = System.nanoTime();
+        currentSpan.addEvent(metadata.spanName() + ".started",
                 Attributes.builder()
-                        .put(
-                                AttributeKey.stringKey(
-                                        "app.service.name"
-                                ),
-                                metadata.serviceName()
-                        )
-                        .build()
-        );
-
+                        .put(AttributeKey.stringKey("app.service.name"), metadata.serviceName())
+                        .build());
 
         try {
-
-            Object result =
-                    joinPoint.proceed();
-
+            Object result = joinPoint.proceed();
 
             /*
              * Async Event
              */
             if (result instanceof CompletionStage<?> stage) {
 
-                return stage.whenComplete(
-                        (value, throwable) -> {
-
-                            double durationMs =
-                                    elapsedMilliseconds(
-                                            start
-                                    );
-
-
+                return stage.whenComplete((value, throwable) -> {
+                            double durationMs = elapsedMilliseconds(start);
                             if (throwable != null) {
 
-                                currentSpan.addEvent(
-                                        metadata.spanName()
-                                                + ".failed",
-                                        Attributes.builder()
-                                                .put(
-                                                        AttributeKey.doubleKey(
-                                                                "app.operation.duration_ms"
-                                                        ),
-                                                        durationMs
-                                                )
+                                currentSpan.addEvent(metadata.spanName() + ".failed",
+                                        Attributes
+                                                .builder()
+                                                .put(AttributeKey.doubleKey("app.operation.duration_ms"), durationMs)
                                                 .build()
                                 );
 
                             } else {
-
                                 currentSpan.addEvent(
-                                        metadata.spanName()
-                                                + ".completed",
-                                        Attributes.builder()
-                                                .put(
-                                                        AttributeKey.doubleKey(
-                                                                "app.operation.duration_ms"
-                                                        ),
-                                                        durationMs
-                                                )
-                                                .build()
-                                );
+                                        metadata.spanName() + ".completed",
+                                        Attributes
+                                                .builder()
+                                                .put(AttributeKey.doubleKey("app.operation.duration_ms"), durationMs)
+                                                .build());
                             }
                         }
                 );
             }
 
-
             currentSpan.addEvent(
-                    metadata.spanName()
-                            + ".completed",
-                    Attributes.builder()
-                            .put(
-                                    AttributeKey.doubleKey(
-                                            "app.operation.duration_ms"
-                                    ),
-                                    elapsedMilliseconds(
-                                            start
-                                    )
-                            )
+                    metadata.spanName() + ".completed",
+                    Attributes
+                            .builder()
+                            .put(AttributeKey.doubleKey("app.operation.duration_ms"), elapsedMilliseconds(start))
                             .build()
             );
-
 
             return result;
 
         } catch (Throwable throwable) {
 
-            currentSpan.addEvent(
-                    metadata.spanName()
-                            + ".failed",
-                    Attributes.builder()
-                            .put(
-                                    AttributeKey.doubleKey(
-                                            "app.operation.duration_ms"
-                                    ),
-                                    elapsedMilliseconds(
-                                            start
-                                    )
-                            )
-                            .put(
-                                    AttributeKey.stringKey(
-                                            "exception.type"
-                                    ),
-                                    throwable
-                                            .getClass()
-                                            .getName()
-                            )
+            currentSpan.addEvent(metadata.spanName() + ".failed",
+                    Attributes
+                            .builder()
+                            .put(AttributeKey.doubleKey("app.operation.duration_ms"),
+                                    elapsedMilliseconds(start))
+                            .put(AttributeKey.stringKey("exception.type"), throwable.getClass().getName())
                             .build()
             );
-
 
             throw throwable;
         }
@@ -294,42 +257,25 @@ public class OpenTelemetryTracingAspect {
     // Common attributes
     // =========================================================
 
-    private void setCommonAttributes(
-            Span span,
-            ProceedingJoinPoint joinPoint,
-            TraceMetadata metadata
-    ) {
-
-        MethodSignature signature =
-                (MethodSignature)
-                        joinPoint.getSignature();
-
+    private void setCommonAttributes(Span span, ProceedingJoinPoint joinPoint, TraceMetadata metadata) {
 
         span.setAttribute(
-                "app.service.name",
-                metadata.serviceName()
+                "openinference.span.kind",
+                metadata.spanKind()
         );
 
+        MethodSignature signature = (MethodSignature) joinPoint.getSignature();
 
-        span.setAttribute(
-                "code.class",
-                joinPoint
-                        .getTarget()
-                        .getClass()
-                        .getSimpleName()
-        );
+        span.setAttribute("app.service.name", metadata.serviceName());
 
+        span.setAttribute("code.class", joinPoint
+                .getTarget()
+                .getClass()
+                .getSimpleName());
 
-        span.setAttribute(
-                "code.method",
-                signature.getName()
-        );
+        span.setAttribute("code.method", signature.getName());
 
-
-        span.setAttribute(
-                "app.operation",
-                metadata.spanName()
-        );
+        span.setAttribute("app.operation", metadata.spanName());
     }
 
 
@@ -421,6 +367,13 @@ public class OpenTelemetryTracingAspect {
                         );
 
 
+        String spanKind =
+                resolveSpanKind(
+                        methodAnnotation,
+                        classAnnotation
+                );
+
+
         String defaultServiceName =
                 joinPoint
                         .getTarget()
@@ -460,8 +413,25 @@ public class OpenTelemetryTracingAspect {
         return new TraceMetadata(
                 serviceName,
                 spanName,
-                newSpan
+                newSpan,
+                spanKind
         );
+    }
+
+
+    private String resolveSpanKind(
+            TraceOperation methodAnnotation,
+            TraceOperation classAnnotation) {
+
+        if (methodAnnotation != null) {
+            return methodAnnotation.spanKind();
+        }
+
+        if (classAnnotation != null) {
+            return classAnnotation.spanKind();
+        }
+
+        return "CHAIN";
     }
 
 
@@ -494,22 +464,14 @@ public class OpenTelemetryTracingAspect {
         return defaultValue;
     }
 
-
     private String resolveSpanName(
             TraceOperation methodAnnotation,
             TraceOperation classAnnotation,
-            String defaultValue
-    ) {
+            String defaultValue) {
 
-        if (methodAnnotation != null
-                && !methodAnnotation
-                .spanName()
-                .isBlank()) {
-
-            return methodAnnotation
-                    .spanName();
+        if (methodAnnotation != null && !methodAnnotation.spanName().isBlank()) {
+            return methodAnnotation.spanName();
         }
-
 
         /*
          * اگر Annotation فقط روی Class باشد،
@@ -521,35 +483,23 @@ public class OpenTelemetryTracingAspect {
 
     private boolean resolveNewSpan(
             TraceOperation methodAnnotation,
-            TraceOperation classAnnotation
-    ) {
+            TraceOperation classAnnotation) {
 
         if (methodAnnotation != null) {
-
-            return methodAnnotation
-                    .newSpan();
+            return methodAnnotation.newSpan();
         }
-
 
         if (classAnnotation != null) {
-
-            return classAnnotation
-                    .newSpan();
+            return classAnnotation.newSpan();
         }
-
 
         return true;
     }
 
-
-    private double elapsedMilliseconds(
-            long start
-    ) {
-
+    private double elapsedMilliseconds(long start) {
         return (System.nanoTime() - start)
                 / 1_000_000.0;
     }
-
 
     // =========================================================
     // Internal metadata
@@ -558,7 +508,7 @@ public class OpenTelemetryTracingAspect {
     private record TraceMetadata(
             String serviceName,
             String spanName,
-            boolean newSpan
-    ) {
+            boolean newSpan,
+            String spanKind) {
     }
 }

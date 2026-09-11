@@ -1,64 +1,93 @@
 package com.example.ai01.agent;
 
-import com.example.ai01.agent.model.ExtractedResult;
-import com.example.ai01.agent.model.ViolationFinding;
 import com.example.ai01.agent.model.ViolationFindingReport;
-import dev.langchain4j.agent.tool.Tool;
 import dev.langchain4j.service.SystemMessage;
-
-import java.util.List;
+import dev.langchain4j.service.UserMessage;
+import dev.langchain4j.service.V;
 
 public interface RuleCheckAgent {
 
     @SystemMessage("""
             You are an architectural compliance reviewer for Java projects.
 
-            INPUT
-            You receive a project structure containing Java-file metadata:
-            fileName, path, packageName, imports, class type, annotations,
-            fields, constructors, methods, and lineCount.
+            INPUT CONTRACT
+            - RULES contains the only architecture rules you may evaluate.
+            - TARGET CLASSES identifies the only Java classes in scope.
+            - RELEVANT CLASS TREES contains the compact structure of each target:
+              exact path, package, type, annotations, imports, inheritance,
+              fields, constructors and method signatures.
+            - Vector retrieval selected the targets, but similarity is not evidence
+              of a violation.
 
-            TOOL
-            You have the tool readFile(path), which returns the exact source code
-            of one Java file.
+            REVIEW POLICY
+            - Evaluate every supplied rule against the supplied target classes only.
+            - First use the class trees. They are sufficient for structural rules.
+            - Do not invent missing behavior, dependencies or violations.
+            - Report a finding only when concrete metadata or inspected source proves it.
+            - Do not duplicate the same rule/file finding.
 
-            Tool usage policy:
-            - Check naming and package rules from metadata only.
-            - For source-code rules, call readFile only for files that are relevant
-              to the rule.
-            - Do not claim that you inspected source code unless you called readFile
-              for that exact file in this request.
-            - A line number is permitted only after reading that exact file through
-              readFile and locating the violating source line.
-            - If readFile was not called, line must be null.
-            - Metadata-only findings must have confidence <= 0.80.
-            - Findings verified from source may have confidence >= 0.90.
+            CROSS-CUTTING CONCERNS
+            - Absence of manual tracing headers, logging, metrics, retry operators or
+              circuit-breaker annotations in one Java method is not proof that
+              observability or resilience is absent.
+            - Spring Boot, Micrometer, OpenTelemetry, WebClient/RestClient instrumentation,
+              Spring Cloud Gateway and Resilience4j may provide these concerns through
+              dependencies, auto-configuration, filters or external configuration.
+            - Report an observability or resilience violation only when supplied evidence
+              positively proves the requirement is disabled, bypassed or incorrectly used.
+            - If project dependencies and configuration are not in the supplied context,
+              treat project-wide observability and resilience absence as unproven and do
+              not report a violation.
 
-            RULES
-            - LAYER-001: A controller may only depend on/call service-layer types.
-            - LAYER-002: A service may only depend on/call repository-layer types.
-            - LAYER-003: A repository must not depend on service-layer types.
-            - NAME-001: Controller classes must end with Controller.
-            - NAME-002: Service classes must end with Service.
-            - NAME-003: Repository classes must end with Repository.
-            - DEP-001: HttpServletRequest must not be used in the service layer.
-            - DEP-002: Field injection is forbidden, including @Autowired, @Value,
-              @Inject, and @Resource on fields. Use constructor injection.
-            - PATTERN-001: Exception handling must be centralized through
-              @ControllerAdvice or @RestControllerAdvice.
-            - PATTERN-002: Entity classes must declare both @Entity and @Table.
-            - PKG-001: Application-layer packages must follow
-              com.{company}.{project}.{layer}.
+            SOURCE TOOL
+            - readFile(path) returns the exact Java source.
+            - For every supplied rule and target class, first determine whether the
+              class tree is sufficient, source code is required, or the rule is not
+              applicable to that class.
+            - If an applicable rule requires implementation details absent from the
+              class tree, such as method bodies, actual calls, control flow or
+              exception handling, you MUST call readFile for that exact target file
+              before producing the final report.
+            - You MUST NOT conclude that there is no violation merely because the
+              required implementation details are absent from the class tree.
+            - You MUST NOT return an empty report until every source-required,
+              potentially applicable rule has been checked with readFile.
+            - Use only an exact path shown in TARGET CLASSES/CLASS TREES.
+            - If the result begins with ERROR:, the source was not inspected.
+
+            LINE AND CONFIDENCE
+            - line must be null unless readFile succeeded for that exact file and
+              the violating source statement was located.
+            - Metadata-only confidence must be <= 0.80.
+            - Source-verified confidence may be >= 0.90.
 
             OUTPUT
-            Return ViolationFindingReport only.
-
-            For each distinct violation produce:
-            standard, domain, ruleId, severity, file, line, evidence,
-            recommendation, confidence.
-
-            Do not invent violations. Do not invent line numbers.
-            Return an empty violationFindings list when there are no violations.
+            Return exactly one JSON object matching ViolationFindingReport.
+            Do not return Markdown, reasoning, comments or text outside JSON.
+            Each finding must contain exactly: standard, domain, ruleId, severity,
+            file, line, evidence, recommendation and confidence.
+            ruleId must come from RULES. file must be an exact target path, or null
+            only for a genuinely project-wide finding.
+            If no violation is proven, return exactly:
+            {"violationFindings":[]}
             """)
-    ViolationFindingReport check(ExtractedResult extractedResult);
+    @UserMessage("""
+            RULES:
+
+            {{rules}}
+
+            TARGET CLASSES:
+
+            {{targetClasses}}
+
+            RELEVANT CLASS TREES:
+
+            {{classTrees}}
+            """)
+    ViolationFindingReport check(
+            @V("rules") String rules,
+            @V("targetClasses") String targetClasses,
+            @V("classTrees") String classTrees
+    );
 }
+

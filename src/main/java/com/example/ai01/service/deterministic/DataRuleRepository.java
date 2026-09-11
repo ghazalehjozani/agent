@@ -1,0 +1,15 @@
+package com.example.ai01.service.deterministic;
+import com.example.ai01.agent.model.*;
+import com.example.ai01.agent.model.ruleextraction.ArchitectureRule;
+import org.springframework.stereotype.Component;
+import java.util.*;
+import java.util.regex.Pattern;
+@Component public class DataRuleRepository extends AbstractRuleRepository {
+ private static final Set<String> STANDARD_ENUM_FIELDS=Set.of("code","label");
+ public DataRuleRepository(SourceTextProvider p){super(p);} public String strategyKey(){return"DATA";} public boolean supports(String c){return RuleCode.belongsTo(c,"DATA");}
+ public List<ViolationFinding> evaluate(ArchitectureRule r,PackageNode p){return switch(RuleCode.normalize(r.id())){case"04037DATA004"->documentedEnumFields(r,p);case"04038DATA005"->noClientLogicOnLabel(r,p);case"04043DATA002"->optionalNullableExample(r,p);default->evaluateSourceContract(r,p);};}
+ private List<ViolationFinding> noClientLogicOnLabel(ArchitectureRule r,PackageNode p){Pattern condition=Pattern.compile("(?s)(?:if|while|switch)\\s*\\([^)]*(?:getLabel\\s*\\(|\\.label\\b)[^)]*\\)");return sourceTextProvider.readAll(p).entrySet().stream().filter(e->condition.matcher(e.getValue()).find()).map(e->finding(r,e.getKey(),"Conditional logic depends on an enum label.","Use the stable enum code for conditional logic.")).toList();}
+ private List<ViolationFinding> optionalNullableExample(ArchitectureRule r,PackageNode p){List<ViolationFinding>o=new ArrayList<>();for(JavaFile f:files(p))for(Field x:f.fields()){Annotation s=annotation(x,"Schema");if(s==null)continue;Map<String,String>a=s.attributes()==null?Map.of():s.attributes();boolean nullable=trueValue(a.get("nullable"));boolean optional="false".equalsIgnoreCase(clean(a.get("required")))||clean(a.get("requiredMode")).endsWith("NOT_REQUIRED");if(nullable&&optional&&!nullExample(a.get("example")))o.add(finding(r,f.path(),"Optional nullable field "+x.name()+" has no null example.","Set @Schema(nullable = true, example = \"null\") for the optional nullable field."));}return List.copyOf(o);}
+ private List<ViolationFinding> documentedEnumFields(ArchitectureRule r,PackageNode p){List<ViolationFinding>o=new ArrayList<>();for(JavaFile f:files(p)){if(f.classType()!=ClassType.ENUM)continue;for(Field x:f.fields()){if(STANDARD_ENUM_FIELDS.contains(safe(x.name()).toLowerCase()))continue;Annotation s=annotation(x,"Schema");String d=s==null||s.attributes()==null?null:s.attributes().get("description");if(d==null||clean(d).isBlank())o.add(finding(r,f.path(),"Enum field "+x.name()+" is not documented in the service schema.","Add @Schema(description = \"...\")."));}}return List.copyOf(o);}
+ private Annotation annotation(Field f,String n){return f.annotations().stream().filter(a->a.name().equals(n)||a.name().endsWith("."+n)).findFirst().orElse(null);} private boolean trueValue(String v){return"true".equalsIgnoreCase(clean(v));} private boolean nullExample(String v){String x=clean(v);return x.equalsIgnoreCase("null")||x.equals("{example: null}");} private String clean(String v){return v==null?"":v.replace("\"","").trim();}
+}

@@ -126,7 +126,11 @@ public class ProjectStructureExtractor {
     private List<Parameter> parametersOf(
             com.github.javaparser.ast.NodeList<com.github.javaparser.ast.body.Parameter> params) {
         return params.stream()
-                .map(p -> new Parameter(p.getTypeAsString(), p.getNameAsString()))
+                .map(p -> new Parameter(
+                        p.getTypeAsString(),
+                        p.getNameAsString(),
+                        annotationsOf(p.getAnnotations())
+                ))
                 .toList();
     }
 

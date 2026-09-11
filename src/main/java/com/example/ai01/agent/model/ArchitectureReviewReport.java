@@ -18,7 +18,7 @@ public record ArchitectureReviewReport(
     public record SeverityGroup(String severity, List<ViolationEntry> violations) {
     }
     public record ViolationEntry(String ruleId, String standard, String domain,
-                                 String file, Integer line, double confidence) {
+                                 String file, Integer line, double confidence, String evidence) {
     }
     public record TechnicalExplanation(String ruleId, String evidence, String explanation) {
     }

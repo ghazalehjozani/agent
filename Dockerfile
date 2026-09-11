@@ -5,7 +5,7 @@ RUN mvn dependency:go-offline
 COPY src ./src
 RUN mvn clean install -DskipTests
 ## multi layer docker
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21-jre
 WORKDIR /app
 COPY --from=build /app/target/*.jar agent.jar
 ENTRYPOINT ["java", "-jar" , "agent.jar"]

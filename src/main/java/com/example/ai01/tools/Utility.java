@@ -1,5 +1,6 @@
 package com.example.ai01.tools;
 
+import com.example.ai01.agent.model.ruleextraction.ArchitectureRule;
 import io.micrometer.core.instrument.MeterRegistry;
 import org.springframework.stereotype.Component;
 
@@ -13,8 +14,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
-public class FileUtility {
-    private FileUtility(MeterRegistry meterRegistry) {
+public class Utility {
+    private Utility(MeterRegistry meterRegistry) {
     }
 
     public static String loadFile(String filePath) {
@@ -34,6 +35,15 @@ public class FileUtility {
             content = "error";
         }
         return content;
+    }
+
+    public static String formatRules(List<ArchitectureRule> rules) {
+
+        return rules.stream()
+                .map(rule ->
+                        "- " + rule.id()
+                                + ": " + rule.description())
+                .collect(Collectors.joining("\n"));
     }
 
     public static boolean writeDownRules(Map<String, String> rules, String path) {
