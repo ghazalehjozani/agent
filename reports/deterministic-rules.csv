@@ -1,0 +1,318 @@
+rule_code,description,strategy_key,rule_type
+02001API001,All REST APIs MUST follow resource-oriented design principles.,API,DETERMINISTIC
+02002API002,The API path MUST start with the version segment v{major} immediately after the context-name.,API,DETERMINISTIC
+02003API003,The API path MUST follow the general path structure [context-name]/v{major}/{resource-collection}/{resource-id}/{sub-resource}.,API,DETERMINISTIC
+02012API001,Sub-resources must be referenced by their own name and id within the path in the form /resources/{resource-id}/sub-resources/{sub-resource-id}.,API,DETERMINISTIC
+02013API002,"When a resource id is not sent as a path segment but comes from the authorization mechanism, the literal 'self' MUST be used as a pseudo-id path segment.",API,DETERMINISTIC
+02014API003,"For main resources with many sub-resource entities, do not define more than 3 levels of sub-resource.",API,DETERMINISTIC
+02015API004,Use camelCase for query parameter names.,API,DETERMINISTIC
+02016API005,For Offset-based pagination use 'page' and 'size' parameters; for Cursor-based pagination use 'cursor' and 'size' parameters.,API,DETERMINISTIC
+02017API006,"If sorting is needed, use the 'sortBy' and 'order' query parameters.",API,DETERMINISTIC
+03001API001,All non-functional concerns must be placed in the Header; defining them in the Body is not allowed.,API,DETERMINISTIC
+03002API002,The Body must host only business data.,API,DETERMINISTIC
+03003API001,"All REST API requests MUST use the standardized request-header format including Idempotency-Key, X-Request-DateTime, and Accept-Language.",API,DETERMINISTIC
+03004API002,The Idempotency-Key header MUST appear at the start of any request that executes a REST service and MUST have a UUID value.,API,DETERMINISTIC
+03005API003,"When the Idempotency-Key is present, it MUST stay constant for one logical operation including all of its retries.",API,DETERMINISTIC
+03006API004,The lifetime of the Idempotency-Key equals the lifecycle of one independent logical request/response operation.,API,DETERMINISTIC
+03007API005,"If one logical operation involves a chain of REST requests (microservices), each logical operation MUST have its own unique Idempotency-Key.",API,DETERMINISTIC
+03008API006,"For every request, the client MUST set the creation/send time in the X-Request-DateTime header as a UTC timestamp with no offset, per ISO 8601.",API,DETERMINISTIC
+03009API007,The Accept-Language header MUST be set and behave according to the client's chosen language per the HTTP specification.,API,DETERMINISTIC
+03010API001,All REST API requests that have a body MUST use the standardized format with an optional 'metadata' field and business content directly in the main body.,API,DETERMINISTIC
+03011API002,"The 'metadata' field in REST request bodies is optional and, where used, MUST be fully documented.",API,DETERMINISTIC
+03012API003,"The 'metadata' field in REST request bodies must only contain data needed by the service for internal processing, not business logic data.",API,DETERMINISTIC
+03013API004,"Business fields essential to core business logic MUST be placed directly in the main request body, not inside the metadata field.",API,DETERMINISTIC
+03014API005,Requests that have no body MUST contain neither the 'metadata' field nor business fields.,API,DETERMINISTIC
+03015API001,"The response header must carry the relevant parameters for idempotency control, tracing, and security.",API,DETERMINISTIC
+03016API002,The response header must copy back the Idempotency-Key and X-Request-DateTime from the request.,API,DETERMINISTIC
+03017API003,The response header must include X-Idempotency-Replayed set to true or false depending on whether the response was produced from a cached result.,API,DETERMINISTIC
+03018API004,The response header must include X-Response-DateTime set at response time for monitoring and logging.,API,DETERMINISTIC
+03019API005,"Original request parameters for idempotency and tracing must be returned in the response header and, if the flow continues into subsequent service calls, placed in those requests' headers.",API,DETERMINISTIC
+03020API001,"All REST API responses MUST use the standardized response format containing RsCode, IsSuccess, metadata, resultData, message, and errorList fields.",API,DETERMINISTIC
+03021API002,The RsCode and IsSuccess fields are legacy compatibility only and MUST be removed from the response structure over time per a defined plan.,API,DETERMINISTIC
+03022API003,Standard HTTP status codes MUST be used to indicate response status; no dedicated 'Response Code' field is needed.,API,DETERMINISTIC
+03023API004,The metadata field in the response serves the same purpose as in the request.,API,DETERMINISTIC
+03024API005,The resultData field holds business data free of any metadata and must map directly to the object synonymous with that business.,API,DETERMINISTIC
+03025API006,"To determine whether the response contains an error, check errorList: if it is present with more than zero members, the operation is deemed unsuccessful and handled per the error codes.",API,DETERMINISTIC
+03026API007,"When there is no error, errorList MUST be an empty array, not null.",API,DETERMINISTIC
+03027API008,Having more than zero members in errorList together with an HTTP status code other than the 400 and 500 families is not allowed.,API,DETERMINISTIC
+03028API001,Pagination information in a paginated response must be placed in a 'pagination' field under 'metadata'.,API,DETERMINISTIC
+03029API001,"The error section of a response MUST follow the structure with fields issuer, code, description, and optional details containing path.",API,DETERMINISTIC
+03030API002,The combination of issuer and code in an error response MUST be unique across the entire Datin comprehensive banking solution.,API,DETERMINISTIC
+03031API003,"The issuer field in an error response MUST be 2-6 characters, all uppercase, and represent the product or service name.",API,DETERMINISTIC
+03032API004,The issuer string in an error response MUST belong to exactly one product and MUST be looked up from a defined registry per product/service.,API,DETERMINISTIC
+03033API005,"The code field in an error response MUST be a unique integer per product/service, starting at 1 and ranging up to the maximum integer value.",API,DETERMINISTIC
+03034API006,"All services MUST use the reserved error codes 1-200 for the described situations, and using these numbers for other situations is not allowed.",API,DETERMINISTIC
+03035API007,"For error code ranges outside the reserved table, each product/service MUST provide its own error-code documentation.",API,DETERMINISTIC
+03036API008,Reserved error codes MUST be accompanied by the specified HTTP status code.,API,DETERMINISTIC
+03037API001,"Error responses MUST include a mandatory 'description' field containing a concise, user-readable error description per product and error code.",API,DETERMINISTIC
+03038API002,"When extra error detail is needed, the server MUST provide it under 'details' as objects and MUST document their structure.",API,DETERMINISTIC
+03039API003,"When 'path' is used under 'details' to indicate an offending field, the field name MUST be appended to the resource URL path using the '#' character.",API,DETERMINISTIC
+05001API001,Every call's response must use standard HTTP status codes.,API,DETERMINISTIC
+05002API002,"Successful GET, PUT, and PATCH requests must return HTTP status code 200.",API,DETERMINISTIC
+05003API003,Successful POST requests that create a new resource must return HTTP status code 201.,API,DETERMINISTIC
+05004API004,"Successful POST, PUT, PATCH, and DELETE requests that are processed asynchronously must return HTTP status code 202.",API,DETERMINISTIC
+05005API005,Successful DELETE requests must return HTTP status code 204.,API,DETERMINISTIC
+05006API006,"Successful POST, PUT, and PATCH requests that make a change but return no data must return HTTP status code 204.",API,DETERMINISTIC
+05007API007,"Client errors caused by a problem with the request itself, such as malformed structure or invalid data, must return HTTP status code 400.",API,DETERMINISTIC
+05008API008,Invalid input data due to business logic or semantics must return HTTP status code 400 instead of 422.,API,DETERMINISTIC
+05009API009,"Authentication errors, such as a missing or invalid auth token, must return HTTP status code 401.",API,DETERMINISTIC
+05010API010,"Authorization errors, where the client is authenticated but lacks required permissions, must return HTTP status code 403.",API,DETERMINISTIC
+05011API011,Requests for a resource that does not exist must return HTTP status code 404.,API,DETERMINISTIC
+05012API012,"Requests using an HTTP method that is unsupported for the resource, or where the resource is not in a state that supports the operation, must return HTTP status code 405.",API,DETERMINISTIC
+05013API013,"Resource conflicts, such as when the resource already exists or a state conflict occurred, must return HTTP status code 409.",API,DETERMINISTIC
+05014API014,Validation errors where the request format is valid but business rules are violated must return HTTP status code 422.,API,DETERMINISTIC
+05015API015,"A request that is retried while the same request is already in progress, indicated by a duplicate Idempotency-Key that is still processing, must return HTTP status code 425.",API,DETERMINISTIC
+05016API016,Requests that exceed the request-rate limit must return HTTP status code 429.,API,DETERMINISTIC
+05017API017,Unexpected server-side errors must return HTTP status code 500.,API,DETERMINISTIC
+05018API018,Errors caused by an unavailable dependency service must return HTTP status code 502.,API,DETERMINISTIC
+05019API019,Temporary service unavailability must return HTTP status code 503.,API,DETERMINISTIC
+06001API001,"The parameters fields, view, and expand are optional; omitting them must be equivalent to returning the full response.",API,DETERMINISTIC
+06002API002,"If partial response capability is provided, it must be implemented exactly per this section's contract and fully documented in the service OpenAPI specification; ad-hoc implementation outside this contract is not allowed.",API,DETERMINISTIC
+06003API003,"The parameters fields, view, and expand affect only the content of resultData; the standard response structure metadata, message, and errorList must be returned unchanged.",API,DETERMINISTIC
+06004API004,"The partial response contract is defined for GET requests only; using fields, view, or expand on other HTTP methods is not allowed.",API,DETERMINISTIC
+06005API005,"The parameter names for partial response are fixed as fields, view, and expand; alternative names such as select, include, or projection are not allowed.",API,DETERMINISTIC
+06006API001,The fields parameter value must be a comma-separated list of field names without spaces.,API,DETERMINISTIC
+06007API002,Each field name in the fields parameter must exactly match the field name in the full JSON response (camelCase).,API,DETERMINISTIC
+06008API003,Nested fields in the fields parameter must be referenced using a dot (.) between field names.,API,DETERMINISTIC
+06009API004,Selecting an object's name without listing its inner fields in the fields parameter returns the whole object.,API,DETERMINISTIC
+06010API005,"Selecting an array field in the fields parameter returns all its members, and using dot notation applies the projection to each member.",API,DETERMINISTIC
+06011API006,Referencing a specific array index in the fields parameter is not supported.,API,DETERMINISTIC
+06012API007,"In list and paginated responses, the fields parameter applies to each member of the list in resultData.",API,DETERMINISTIC
+06013API008,"Pagination and sorting parameters operate independently of the fields parameter, and the field used in sortBy need not appear in the fields list.",API,DETERMINISTIC
+06014API009,The pagination field under metadata stays unchanged when the fields parameter is used.,API,DETERMINISTIC
+06015API010,Unselected fields must be absent from the response; their presence with a null value is not allowed.,API,DETERMINISTIC
+06016API011,"If an unknown field name not in the resource schema is sent in the fields parameter, the service must refuse to process and return a 400 error.",API,DETERMINISTIC
+06017API012,"In the response body for an unknown field error, the path field must point to the fields parameter.",API,DETERMINISTIC
+06018API001,The 'issuer' and 'code' fields in the error response MUST be chosen from the relevant product's documented error-code table.,API,DETERMINISTIC
+06019API002,The reserved codes 1–200 MUST NOT be used for the optional partial response error.,API,DETERMINISTIC
+06020API001,Named view values must be uppercase strings.,API,DETERMINISTIC
+06021API002,"If implemented, the FULL view must be defined in all supporting services and equal the full response.",API,DETERMINISTIC
+06022API003,The default view when the view parameter is omitted must be FULL.,API,DETERMINISTIC
+06023API004,Each service's view list and the exact fields of each view must be documented in the service docs.,API,DETERMINISTIC
+06024API005,An unknown view must be answered with a 400 status code.,API,DETERMINISTIC
+06025API006,Adding a new field to an existing view is a compatible change.,API,DETERMINISTIC
+06026API007,"Removing a field from a view, or removing the view itself, is incompatible and must be managed with a proper deprecation cycle.",API,DETERMINISTIC
+06027API008,"For frequent and known use cases, prefer named views over the fields parameter.",API,DETERMINISTIC
+06028API001,"The syntax of the expand parameter (separation by comma, camelCase naming, dot for nesting) must be exactly like the fields parameter.",API,DETERMINISTIC
+06029API002,The list of expandable fields and the default response state MUST be clearly documented.,API,DETERMINISTIC
+06030API003,An unknown value in the expand parameter must be answered with a 400 response.,API,DETERMINISTIC
+06031API001,The query parameters 'fields' and 'view' must not be used together.,API,DETERMINISTIC
+06032API002,The query parameters 'fields' and 'expand' must not be used together.,API,DETERMINISTIC
+06033API003,The query parameters 'view' and 'expand' must be used together.,API,DETERMINISTIC
+06034API004,"If the 'fields' and 'view' parameters are used together, the service must return HTTP 400 without processing the request.",API,DETERMINISTIC
+06035API005,"If the 'fields' and 'expand' parameters are used together, the service must return HTTP 400 without processing the request.",API,DETERMINISTIC
+06039API001,"If the goal is only to reduce payload size, projection at the serialization layer is sufficient; if database-load reduction is needed, the 'fields' parameter must be mapped to query-level projection.",API,DETERMINISTIC
+06040API002,The choice of projection layer (serialization vs query-level) must be reflected in the service's technical design.,API,DETERMINISTIC
+06041API003,"If a cache key is built from the URL, the 'fields' and 'expand' values must be normalized before building the key (alphabetical sorting and de-duplication) so that different orderings do not create distinct cache entries.",API,DETERMINISTIC
+06042API004,"Services providing partial response capability must fully define the parameters, views, expandable fields, and limits in their OpenAPI spec.",API,DETERMINISTIC
+06043API001,"The fields, view, and expand contract is specific to GET-based synchronous interaction and does not carry over to messages exchanged via a broker in async communication.",API,DETERMINISTIC
+06044API002,"The payload structure of a service's input/output must be preserved in broker messages, including fields, types, enums, and date/time format.",API,DETERMINISTIC
+06045API003,"The fields, view, and expand parameters are not part of the payload contract and must not be carried into broker messages.",API,DETERMINISTIC
+10003API001,The Idempotency-Key request-header parameter must be used according to draft version 7 of the IETF specification.,API,DETERMINISTIC
+10004API002,APIs that require Idempotency-Key at call time must clearly state this requirement in their documentation.,API,DETERMINISTIC
+10005API003,"The Idempotency-Key field must be set using a structure that guarantees universal uniqueness, with UUID recommended unless the server has documented another reliable structure.",API,DETERMINISTIC
+10007API001,Server must store the operation result per Idempotency-Key for the duration stated in the service documentation.,API,DETERMINISTIC
+10008API002,"Before processing a request, the server must look up the Idempotency-Key in previously processed data to identify duplicate requests.",API,DETERMINISTIC
+10009API003,"If a duplicate request is identified, the server must return the previously cached response.",API,DETERMINISTIC
+10010API004,"If no duplicate is found, the server must allow the current request to proceed.",API,DETERMINISTIC
+10011API005,Every server must have a mechanism to store and retrieve all received requests together with their corresponding processed response.,API,DETERMINISTIC
+10012API006,"If a service applies an expiry to stored idempotency data, it must state that duration in the service documentation.",API,DETERMINISTIC
+10017API001,"When the server is still processing the first instance of an incoming request and the client retries, the server must return HTTP 425 with response error code 104 in the body.",API,DETERMINISTIC
+10018API002,"When the current request's Idempotency-Key exists on the server but the Fingerprint differs, the server must return HTTP 409 with response error code 105 in the body.",API,DETERMINISTIC
+10019API003,"When the service documentation states that Idempotency-Key is required but it is absent from the request header, the server must return HTTP 400 with response error code 106 in the body.",API,DETERMINISTIC
+10020API001,Distinguish the Idempotency-Key header from any parameter carrying a unique-request-id (Request Id) concept.,API,DETERMINISTIC
+10021API002,"If a Request Id parameter is used in a product's API, its usage MUST be stated in that API's documentation.",API,DETERMINISTIC
+11005API001,"When a duplicate request with the same Idempotency-Key is received while the original request is still being processed, the server MUST respond with HTTP status 425 Too Early.",API,DETERMINISTIC
+11006API002,"When rejecting a duplicate request with HTTP 425 Too Early, the response MUST include the reserved error code 104 in the error list.",API,DETERMINISTIC
+11007API003,"When rejecting a duplicate request with HTTP 425 Too Early, the response MUST include the same Idempotency-Key header as the request.",API,DETERMINISTIC
+11008API004,"When rejecting a duplicate request with HTTP 425 Too Early, the response MUST include the X-Idempotency-Replayed header set to false.",API,DETERMINISTIC
+11009API005,"When rejecting a duplicate request with HTTP 425 Too Early, the response MUST include the X-Request-DateTime header with the same value as the request.",API,DETERMINISTIC
+11010API006,"When rejecting a duplicate request with HTTP 425 Too Early, the response MUST include the X-Response-DateTime header.",API,DETERMINISTIC
+11011API007,"When rejecting a duplicate request with HTTP 425 Too Early, the response body MUST contain RsCode '1004'.",API,DETERMINISTIC
+11012API008,"When rejecting a duplicate request with HTTP 425 Too Early, the response body MUST contain IsSuccess set to 'false'.",API,DETERMINISTIC
+11013API009,"When rejecting a duplicate request with HTTP 425 Too Early, the response body MUST contain a message indicating that the duplicate operation is still processing.",API,DETERMINISTIC
+11014API010,"When rejecting a duplicate request with HTTP 425 Too Early, the response body MUST contain an error entry with issuer 'PAY' and code 104.",API,DETERMINISTIC
+11015API001,"When an Idempotency-Key is reused with a different payload, the server must return HTTP 409 Conflict with error code 105.",API,DETERMINISTIC
+11016API001,An API endpoint documented as requiring an Idempotency-Key header must reject requests that do not include the Idempotency-Key header with HTTP 400 and error code 106.,API,DETERMINISTIC
+11017API001,Business validation errors must be responded with HTTP 400 Bad Request.,API,DETERMINISTIC
+11018API002,Business validation error responses must include a non-standard application-specific error code.,API,DETERMINISTIC
+11019API003,"Business validation error responses must include an error list with issuer, code, description, and details.",API,DETERMINISTIC
+11020API004,"Business validation error responses must include the fields RsCode, IsSuccess, metadata, resultData, message, and errorList.",API,DETERMINISTIC
+11021API005,Business validation error responses must include the Idempotency-Key header.,API,DETERMINISTIC
+11022API006,Business validation error responses must include the X-Request-DateTime header.,API,DETERMINISTIC
+11023API007,Business validation error responses must include the X-Idempotency-Replayed header.,API,DETERMINISTIC
+11024API008,Business validation error responses must include the X-Response-DateTime header.,API,DETERMINISTIC
+11025API009,Business validation error responses must set IsSuccess to false.,API,DETERMINISTIC
+11026API010,Business validation error responses must set metadata to null.,API,DETERMINISTIC
+11027API011,Business validation error responses must set resultData to null.,API,DETERMINISTIC
+11028API012,Business validation error responses must include a message describing the error.,API,DETERMINISTIC
+11029API013,Business validation error responses must include an errorList array.,API,DETERMINISTIC
+11030API014,Each error in the errorList must include an issuer field.,API,DETERMINISTIC
+11031API015,Each error in the errorList must include a code field.,API,DETERMINISTIC
+11032API016,Each error in the errorList must include a description field.,API,DETERMINISTIC
+11033API017,Each error in the errorList must include a details array.,API,DETERMINISTIC
+11034API018,Each detail in the details array must include a field and an issue.,API,DETERMINISTIC
+04001DATA001,All REST APIs must use JSON for the request/response body.,DATA,DETERMINISTIC
+04002DATA002,All JSON field names must use camelCase.,DATA,DETERMINISTIC
+04003DATA003,"Date and time values must follow ISO 8601 format YYYY-MM-DDTHH:mm:ss.sssZ, in UTC, with no offset.",DATA,DETERMINISTIC
+04004DATA004,Sending an offset such as +03:30 in the payload is forbidden.,DATA,DETERMINISTIC
+04005DATA005,Time-handling logic must be explicit and at the application-code level.,DATA,DETERMINISTIC
+04006DATA006,Instant and civil date values must be kept separate and use distinct formats.,DATA,DETERMINISTIC
+04007DATA007,"All date/time values in message bodies and headers must be exchanged in a single, machine-readable, culture-independent format: Gregorian calendar, Latin digits (0-9), per ISO 8601.",DATA,DETERMINISTIC
+04008DATA008,"Converting to Jalali or Hijri, reordering date parts, and localized separators/digits are the presentation layer's (consumer's) job and must not affect the transport format.",DATA,DETERMINISTIC
+04009DATA009,"Instant values must use the full ISO 8601 format including date, time, and time zone, always with time zone Z, and be marked format: date-time in OpenAPI.",DATA,DETERMINISTIC
+04010DATA010,"Civil date values must use the RFC 3339 full-date profile of ISO 8601 (YYYY-MM-DD), intentionally without a time zone, and be marked format: date in OpenAPI.",DATA,DETERMINISTIC
+04011DATA011,A civil date must not be sent as an instant with zero time.,DATA,DETERMINISTIC
+04012DATA001,"If a civil date is intrinsically tied to a specific time zone, the format stays YYYY-MM-DD, but this dependency and the reference time zone MUST be stated explicitly in that field's OpenAPI description.",DATA,DETERMINISTIC
+04013DATA002,The canonical reference for all dates MUST be the Gregorian calendar; conversion to Jalali or other calendars happens in the presentation layer.,DATA,DETERMINISTIC
+04014DATA003,"Relying on Gregorian for sorting, range queries, date arithmetic, and the Jalali leap-year rule is required.",DATA,DETERMINISTIC
+04015DATA004,Sending a Jalali value without a 'calendar indicator' is ambiguous and unreliable.,DATA,DETERMINISTIC
+04016DATA005,Calendar and display locale are negotiated via the Accept-Language header per BCP 47; the Unicode extension allows explicit calendar and numbering systems.,DATA,DETERMINISTIC
+04017DATA006,The calendar indicator and fa-IR-u-ca-persian-nu-arabext will not be used. All dates MUST be Gregorian by default.,DATA,DETERMINISTIC
+04018DATA007,"When a Jalali value must be provided in the response, it MUST be an independent, explicitly named derived field alongside the main Gregorian field, not a replacement.",DATA,DETERMINISTIC
+04019DATA008,Putting a Jalali date in a field without a calendar indicator and without the corresponding Gregorian value is not allowed.,DATA,DETERMINISTIC
+04020DATA009,"Use hh:mm:ss (24-hour, zero-padded; with fractional seconds hh:mm:ss.sss if needed) for wall-clock time, per RFC 3339 partial-time and ISO 8601 time-of-day.",DATA,DETERMINISTIC
+04021DATA010,Mark wall-clock time fields as format: time in OpenAPI and use Latin digits.,DATA,DETERMINISTIC
+04022DATA001,Wall-clock time values must not contain a time zone offset and must not be represented as an instant with a fabricated date.,DATA,DETERMINISTIC
+04023DATA002,"When a field uses JSON Schema format 'time', the OpenAPI description must explicitly state that the partial-time (no-offset) form is intended.",DATA,DETERMINISTIC
+04024DATA003,"Duration or length of time must be represented using ISO 8601 duration format (e.g., PT90M, PT2H30M) with format 'duration'.",DATA,DETERMINISTIC
+04025DATA004,Recurrence rules must be expressed using RRULE from RFC 5545 (iCalendar) or cron expressions for schedulers.,DATA,DETERMINISTIC
+04026DATA005,"When a wall-clock time must be attributed to a time zone, the time zone must be stored as an IANA time-zone identifier (e.g., Asia/Tehran) in a separate field, not as a numeric offset.",DATA,DETERMINISTIC
+04027DATA006,The transport format for wall-clock time must always be 24-hour with Latin digits; 12-hour display and Persian digits are solely the presentation layer's responsibility.,DATA,DETERMINISTIC
+04028DATA007,Non-monetary integers up to the safe IEEE 754 double range and decimals of ordinary precision must use JSON number type.,DATA,DETERMINISTIC
+04029DATA008,Numbers beyond the safe IEEE 754 double range and decimals with sensitive precision must be represented as strings.,DATA,DETERMINISTIC
+04030DATA009,The float type must not be used for monetary values.,DATA,DETERMINISTIC
+04031DATA010,Monetary numbers must be represented as strings.,DATA,DETERMINISTIC
+04032DATA011,The maximum allowed decimal precision is 4 digits; more is not allowed.,DATA,DETERMINISTIC
+04033DATA012,"Before parsing a numeric JSON field value, validate the character count against the allowed limit in both the integer and fractional parts to prevent BigDecimal DoS.",DATA,DETERMINISTIC
+04034DATA001,"In the response body, an enum value must be provided as an object containing a machine-readable 'code' field and at minimum a localized 'label' field.",DATA,DETERMINISTIC
+04035DATA002,"The 'code' field of an enum object must be a machine-readable, constant enum value in uppercase, with multi-word values separated by underscore.",DATA,DETERMINISTIC
+04036DATA003,"The 'label' field of an enum object must be the localized display text in the requested language, influenced by Accept-Language.",DATA,DETERMINISTIC
+04037DATA004,Any other field that is part of the enum's core fields and must be needed by clients must be documented in the service's spec.,DATA,DETERMINISTIC
+04038DATA005,A client must not base any logic on the 'label' field; conditioning logic only on 'code' is allowed.,DATA,DETERMINISTIC
+04039DATA006,"In the request body, an enum field must be sent as a string containing only its code.",DATA,DETERMINISTIC
+04040DATA007,Array fields must use plural names.,DATA,DETERMINISTIC
+04041DATA008,"If a property is optional and nullable, both null and absent states must be handled identically with the same specification.",DATA,DETERMINISTIC
+04042DATA001,"A required and nullable property must not use `{}`; it must use `{""example"": null}`.",DATA,DETERMINISTIC
+04043DATA002,"An optional and nullable property must use `{""example"": null}` as the conventional representation.",DATA,DETERMINISTIC
+04044DATA003,"A required and non-nullable property must not use `{}` and must not use `{""example"": null}`; it must appear with a value other than null.",DATA,DETERMINISTIC
+04045DATA004,"An optional and non-nullable property must use `{}` and must not use `{""example"": null}`.",DATA,DETERMINISTIC
+04046DATA005,Boolean parameters must not appear in JSON with null; they must always be either true or false.,DATA,DETERMINISTIC
+04047DATA006,"If a use case requires a meaningful null for a Boolean, replace the Boolean with an enum of YES, NO, and UNDEFINED.",DATA,DETERMINISTIC
+04048DATA007,"For empty arrays, do not use null; provide an empty list [].",DATA,DETERMINISTIC
+11035DEP001,No service must call another service directly; all service-to-service communication must go through the ESB.,DEP,DETERMINISTIC
+12007DEP001,HttpServletRequest must not be used in the service layer.,DEP,DETERMINISTIC
+12008DEP002,Field injection using @Autowired is forbidden; use constructor injection instead.,DEP,DETERMINISTIC
+10001IDEMPOTENCY001,An idempotent operation must be executable multiple times without changing the result relative to the first execution.,IDEMPOTENCY,DETERMINISTIC
+10002IDEMPOTENCY002,APIs must support a client's retry mechanism for requests that are not inherently idempotent.,IDEMPOTENCY,DETERMINISTIC
+11001IDEMPOTENCY001,"When a client resends a request with the same Idempotency-Key, the server must not reprocess the operation and must return the previously cached response.",IDEMPOTENCY,DETERMINISTIC
+11002IDEMPOTENCY002,"When an idempotent request is replayed, the response must include the header X-Idempotency-Replayed with value true.",IDEMPOTENCY,DETERMINISTIC
+11003IDEMPOTENCY003,"When an idempotent request is replayed, the response must include the original stored HTTP status code.",IDEMPOTENCY,DETERMINISTIC
+11004IDEMPOTENCY004,"When an idempotent request is replayed, the response must include the original stored response body.",IDEMPOTENCY,DETERMINISTIC
+11037IDEM001,"For each hop in a service chain, the client must generate a unique Idempotency-Key (UUID).",IDEMPOTENCY,DETERMINISTIC
+11038IDEM002,"Each server service, including the ESB, must store the received Idempotency-Key in its idempotency store and cache its response.",IDEMPOTENCY,DETERMINISTIC
+11039IDEMPOTENCY001,Each server service must store the received Idempotency-Key.,IDEMPOTENCY,DETERMINISTIC
+11040IDEMPOTENCY002,Each hop in a service chain must generate a new Idempotency-Key for the outgoing request.,IDEMPOTENCY,DETERMINISTIC
+11041IDEMPOTENCY003,"When a request is retried, the server must use the stored Idempotency-Key to recognize the duplicate and return the cached response without re-running the chain from that point.",IDEMPOTENCY,DETERMINISTIC
+12001LAYER001,Controller classes must only call service classes.,LAYER,DETERMINISTIC
+12002LAYER002,Service classes must only call repository classes.,LAYER,DETERMINISTIC
+12003LAYER003,Repository classes must not depend on service classes.,LAYER,DETERMINISTIC
+07003MSG001,"All non-functional concerns in asynchronous messages must be placed in the Header, not in the Body.",MESSAGING,DETERMINISTIC
+07004MSG002,The Body of an asynchronous message must contain only business data.,MESSAGING,DETERMINISTIC
+07005MSG003,"All asynchronous messages must use the standardized message-header format containing Idempotency-Key, X-Request-DateTime, and Accept-Language fields.",MESSAGING,DETERMINISTIC
+07006MSG004,All messages published to brokers must use the mandatory structure with an optional 'metadata' object followed by business content.,MESSAGING,DETERMINISTIC
+07007MSG005,"The 'metadata' parameter in an asynchronous message body must be used to meet needs not readily available due to the communication type, while preserving async principles and rules.",MESSAGING,DETERMINISTIC
+07008MSG006,All general data-formatting standards defined for synchronous REST messages apply to asynchronous message bodies.,MESSAGING,DETERMINISTIC
+07020MSG001,"The response message header of an asynchronous request/response channel MUST contain the Idempotency-Key, X-Request-DateTime, X-Idempotency-Replayed, X-Response-DateTime, and X-Response-Code parameters.",MESSAGING,DETERMINISTIC
+07021MSG002,The X-Response-Code header in an asynchronous response message MUST carry the HTTP-equivalent status code matching the processing result.,MESSAGING,DETERMINISTIC
+07022MSG003,"The asynchronous response message MUST have the structure: RsCode, IsSuccess, optional metadata, resultData, message, and errorList when an error occurs.",MESSAGING,DETERMINISTIC
+07023MSG001,"For Message Brokers without a message Header, a 'header' field must be added to the main message body, with all Header-related parameters placed under it.",MESSAGING,DETERMINISTIC
+07024MSG002,The header field convention applies to both request and response messages.,MESSAGING,DETERMINISTIC
+07009NAME001,Message channel names must follow the pattern [prefix].[system].[domain].{component}.[event|command[.request|.response]].[topic|queue].v[version-number]{.dlt}.,NAME,DETERMINISTIC
+07010NAME002,The prefix part of a message channel name must be a constant infrastructure-dependent prefix; currently 'corridor' is suggested for all channels.,NAME,DETERMINISTIC
+07011NAME003,"The system part of a message channel name must be the name of the system containing the business domain, e.g., 'switch', 'mobile-bank', 'esb', 'core'.",NAME,DETERMINISTIC
+07012NAME004,"The domain part of a message channel name must be the domain name within the system, referencing the service name.",NAME,DETERMINISTIC
+07013NAME005,The component part of a message channel name is optional and must be used only if the domain is component-oriented.,NAME,DETERMINISTIC
+07014NAME006,"For event or notification channels, the event name must be unique at the domain/component level, expressed in past tense, and in kebab-case if multi-word.",NAME,DETERMINISTIC
+07015NAME007,"For command channels, the command name must express the command in imperative form.",NAME,DETERMINISTIC
+07016NAME008,The request or response qualifier is allowed only for command channels; use 'request' to send a request and 'response' to receive a response.,NAME,DETERMINISTIC
+07017NAME009,Each message channel name must include either 'topic' or 'queue' depending on the communication model (Point-to-Point or Pub/Sub).,NAME,DETERMINISTIC
+07018NAME010,"The version number in a message channel name must be an integer greater than or equal to 1, prefixed with the constant letter 'v'.",NAME,DETERMINISTIC
+07019NAME011,"When using the Dead Letter pattern, the dead-letter channel name must append '.dlt' to the main channel name.",NAME,DETERMINISTIC
+12004NAME001,Controller classes must end with 'Controller'.,NAME,DETERMINISTIC
+12005NAME002,Service classes must end with 'Service'.,NAME,DETERMINISTIC
+12006NAME003,Repository classes must end with 'Repository'.,NAME,DETERMINISTIC
+09001OBS001,All services must implement the OpenTelemetry (OTel) standard as the single mandatory framework for distributed tracing.,OBSERVABILITY,DETERMINISTIC
+09002OBS002,All services must use the W3C Trace Context standard to propagate tracing information across all synchronous and asynchronous communication.,OBSERVABILITY,DETERMINISTIC
+09003OBS003,All outgoing HTTP requests must include the traceparent header.,OBSERVABILITY,DETERMINISTIC
+09004OBS004,All incoming HTTP requests must accept the traceparent header.,OBSERVABILITY,DETERMINISTIC
+09005OBS005,The traceparent header must carry the format {version}-{traceid}-{parentid}-{traceflags}.,OBSERVABILITY,DETERMINISTIC
+09006OBS006,The tracestate header must carry APM-vendor-specific information.,OBSERVABILITY,DETERMINISTIC
+09007OBS007,All structured JSON logs must carry the current trace_id and span_id.,OBSERVABILITY,DETERMINISTIC
+09011OBS008,"Instead of logging the body, log request metadata such as http.method, http.path, http.status_code, duration_ms, and non-sensitive business identifiers.",OBSERVABILITY,DETERMINISTIC
+11036TRACE001,The trace-id generated by the initiating service must remain constant across all hops in a chain of service calls.,OBSERVABILITY,DETERMINISTIC
+12009PATTERN001,All exceptions must be handled via @ControllerAdvice.,PATTERN,DETERMINISTIC
+12010PATTERN002,All entities must be annotated with @Entity and @Table.,PATTERN,DETERMINISTIC
+12011PKG001,Package structure must follow: com.{company}.{project}.{layer}.,PKG,DETERMINISTIC
+01007SECURITY001,Every inter-service communication channel must be authenticated and authorized.,SECURITY,DETERMINISTIC
+06036SECURITY001,"Field selection via partial response parameters must not grant new authorization; authorization, masking, and sensitive-data removal must be applied exactly as in the full response and before projection.",SECURITY,DETERMINISTIC
+06037SECURITY002,Field-name validation must be based on the service's documented schema (OpenAPI); mapping fields directly to a database query or using reflection without an allowlist is not allowed.,SECURITY,DETERMINISTIC
+06038SECURITY003,"The server should set and document a cap on the number of selectable fields and nesting depth, and answer breaches with a 400.",SECURITY,DETERMINISTIC
+08001SECURITY001,Header names and literals in the Inter-Service Communication Standard are verbatim and must be used exactly as specified.,SECURITY,DETERMINISTIC
+08002SECURITY001,All inter-service communication requires authentication.,SECURITY,DETERMINISTIC
+08003SECURITY002,Use the OAuth 2.0 Client Credentials flow and SSO's services for that flow.,SECURITY,DETERMINISTIC
+08004SECURITY003,Use JWS tokens for authentication.,SECURITY,DETERMINISTIC
+08005SECURITY004,Tokens used asynchronously or offline must carry the trace of the original user who initiated the request via the SSO Token Delegation mechanism.,SECURITY,DETERMINISTIC
+08006SECURITY005,The maximum allowed token expiry is 4 hours.,SECURITY,DETERMINISTIC
+08007SECURITY006,Permanently storing the SSO public key in the service-calling system is not allowed; use a Cache-and-Evict mechanism (evict on error).,SECURITY,DETERMINISTIC
+08008SECURITY007,Declaring a service's token security requirements is the server's responsibility and must be documented; meeting them is the client's responsibility.,SECURITY,DETERMINISTIC
+08009SECURITY008,The token value must be placed in the header under the standard name 'Authorization'.,SECURITY,DETERMINISTIC
+08010SECURITY009,"All services must validate the JWS signature, expiry, and the scopes the service requires.",SECURITY,DETERMINISTIC
+08011SECURITY010,"To detect revoked tokens, use the events sent to the relevant Eventbus topic.",SECURITY,DETERMINISTIC
+08012SECURITY011,"If real-time token checking is needed for extra security, Datin's SSO provides an introspection service you can call to verify token validity.",SECURITY,DETERMINISTIC
+08013SECURITY012,The entire sent payload must be signed by the requester to verify the sender's identity and ensure the message was not tampered with.,SECURITY,DETERMINISTIC
+08014SECURITY013,The server must verify the payload signature before processing the request to confirm the sender's identity.,SECURITY,DETERMINISTIC
+08015SECURITY014,The algorithm used to build the signature is determined by the server and must be stated in the service's documentation.,SECURITY,DETERMINISTIC
+08016SECURITY001,Authorization must be performed by the Access Management Service (AMS).,SECURITY,DETERMINISTIC
+08017SECURITY002,The Access Management Service (AMS) must store access information of all systems in a suitable structure and provide it to clients.,SECURITY,DETERMINISTIC
+08018SECURITY003,Declaring required permissions is the server's responsibility and must be documented.,SECURITY,DETERMINISTIC
+08019SECURITY004,Meeting required permissions is the client's responsibility.,SECURITY,DETERMINISTIC
+09008SEC001,Logging the full request or response payload is forbidden in all environments.,SECURITY,DETERMINISTIC
+09009SEC002,"If logging body information is strictly necessary, the data must be processed by a sanitization mechanism before logging.",SECURITY,DETERMINISTIC
+09010SEC003,"All sensitive fields such as password, token, nationalCode, pan, and cvv2 must be fully masked or removed when logging body information.",SECURITY,DETERMINISTIC
+10006SECURITY001,Processing of the Idempotency-Key must occur after Authentication and Authorization.,SECURITY,DETERMINISTIC
+10013SECURITY001,All services must implement authentication and authorization mechanisms.,SECURITY,DETERMINISTIC
+10014SECURITY002,"When checking for duplicate requests, use a request fingerprint alongside the Idempotency-Key to prevent access to a previously processed request's result.",SECURITY,DETERMINISTIC
+10015SECURITY003,The server must store a computed fingerprint alongside the Idempotency-Key.,SECURITY,DETERMINISTIC
+10016SECURITY004,The previously stored response for the current Idempotency-Key must be sent to the client only when the current request's fingerprint matches the stored fingerprint and Idempotency-Key pair; otherwise an appropriate error must be returned.,SECURITY,DETERMINISTIC
+11042SECURITY001,All endpoints must be authenticated.,SECURITY,DETERMINISTIC
+11043SECURITY002,Invalid tokens must be rejected.,SECURITY,DETERMINISTIC
+11044SECURITY003,Expired tokens must be rejected.,SECURITY,DETERMINISTIC
+11045SECURITY004,No sensitive information must be placed in the URL.,SECURITY,DETERMINISTIC
+11046SECURITY005,All operations must be defined in the central authorization system.,SECURITY,DETERMINISTIC
+11047SECURITY006,Resource-level access control must be implemented.,SECURITY,DETERMINISTIC
+11048SECURITY007,"Least privilege must be applied, granting only the minimum necessary access.",SECURITY,DETERMINISTIC
+11049SECURITY008,Roles must not be hard-coded.,SECURITY,DETERMINISTIC
+11050SECURITY009,Inputs must be validated.,SECURITY,DETERMINISTIC
+11051SECURITY010,Outputs must be sanitized.,SECURITY,DETERMINISTIC
+11052SECURITY011,Sensitive data must be masked.,SECURITY,DETERMINISTIC
+11053SECURITY012,Encryption in transit (TLS) must be in place.,SECURITY,DETERMINISTIC
+11054SECURITY013,Security events must be logged.,SECURITY,DETERMINISTIC
+11055SECURITY014,No PII must be present in logs.,SECURITY,DETERMINISTIC
+11056SECURITY015,Access logs must be recorded completely.,SECURITY,DETERMINISTIC
+11057SECURITY016,Audit trails must be traceable.,SECURITY,DETERMINISTIC
+01013REST001,All services inside or outside the Datin ecosystem must be exposed as REST as a high priority.,URL,DETERMINISTIC
+01014REST002,SOAP is not permitted at any layer.,URL,DETERMINISTIC
+01015REST003,"REST is used for public APIs and for use across two or more distinct, independent domains.",URL,DETERMINISTIC
+01016REST004,"gRPC is used for high-performance, low-latency scenarios such as internal, intra-domain systems.",URL,DETERMINISTIC
+01017REST005,"SOAP is used for legacy integrations with banking partners outside the Datin ecosystem, where they exist.",URL,DETERMINISTIC
+01018REST006,Cross-domain services must use REST protocol and architecture.,URL,DETERMINISTIC
+01019REST007,gRPC must be used in intra-domain services at the discretion of each product's technical managers.,URL,DETERMINISTIC
+02004URL001,All URL path segments MUST use kebab-case (lowercase letters separated by hyphens).,URL,DETERMINISTIC
+02005URL002,Every API URL MUST start with a version prefix of the form v{major} where {major} is the major version number.,URL,DETERMINISTIC
+02006URL003,The version segment in the URL MUST refer only to the major version; the full version (major.minor.patch) MUST be specified in the OpenAPI specification.,URL,DETERMINISTIC
+02007URL004,API URLs MUST NOT include an 'api/' prefix.,URL,DETERMINISTIC
+02008URL005,API URLs MUST NOT contain verbs in the path; actions and behaviors MUST be expressed using standard HTTP methods.,URL,DETERMINISTIC
+02009URL006,"RPC-style URLs with verbs in the path MUST be used only when no other reasonable, defensible solution exists, such as when access control makes resource-oriented design impractical.",URL,DETERMINISTIC
+02010URL007,Resource names in URLs MUST use plural nouns for collections and singular nouns for individual resources.,URL,DETERMINISTIC
+02011URL008,Sub-resources MUST be scoped under their parent resource in the URL path; they MUST NOT be defined independently.,URL,DETERMINISTIC

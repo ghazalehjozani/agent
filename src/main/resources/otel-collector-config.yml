@@ -17,7 +17,6 @@ receivers:
       http:
         endpoint: 0.0.0.0:4318
 
-
 # =========================================================
 # Processors
 # =========================================================
@@ -28,6 +27,11 @@ processors:
   # به صورت Batch ارسال می‌شوند.
   batch:
 
+  filter/ignored-db-selects:
+    error_mode: ignore
+    trace_conditions:
+      - 'IsMatch(span.name, "(?i)^SELECT.*markdown_files.*")'
+      - 'IsMatch(span.name, "(?i)^SELECT.*information_schema.*")'
 
 # =========================================================
 # Exporters
@@ -49,16 +53,8 @@ exporters:
 # =========================================================
 
 service:
-
   pipelines:
-
     traces:
-
-      receivers:
-        - otlp
-
-      processors:
-        - batch
-
-      exporters:
-        - otlp/phoenix
+      receivers: [otlp]
+      processors: [ filter/ignored-db-selects, batch ]
+      exporters: [otlp/phoenix]

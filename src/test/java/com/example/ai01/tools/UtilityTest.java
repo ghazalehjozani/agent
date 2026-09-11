@@ -2,13 +2,10 @@ package com.example.ai01.tools;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.springframework.util.Assert;
 
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-class FileUtilityTest {
+class UtilityTest {
 
     @Test
     void writeDownRules() {
@@ -24,7 +21,7 @@ class FileUtilityTest {
                 "PATTERN-001", "All exceptions must be handled via `@ControllerAdvice`",
                 "PATTERN-002", "All entities must be annotated with `@Entity` and `@Table`");
 
-        Assertions.assertTrue(FileUtility.writeDownRules(data, "C:\\Users\\A\\OneDrive\\Documents\\agent\\md\\architecture-rules.md"));
+        Assertions.assertTrue(Utility.writeDownRules(data, "C:\\Users\\A\\OneDrive\\Documents\\agent\\md\\architecture-rules.md"));
     }
 
 }

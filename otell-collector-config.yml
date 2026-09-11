@@ -1,0 +1,29 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+
+  filter/ignored-db-selects:
+    error_mode: ignore
+    trace_conditions:
+      - 'IsMatch(span.name, "(?i)^SELECT.*markdown_files.*")'
+      - 'IsMatch(span.name, "(?i)^SELECT.*information_schema.*")'
+
+exporters:
+  otlp/phoenix:
+    endpoint: phoenix:4317
+    tls:
+      insecure: true
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [filter/ignored-db-selects, batch]
+      exporters: [otlp/phoenix]

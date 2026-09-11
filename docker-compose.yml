@@ -12,10 +12,73 @@ services:
     environment:
       JAVA_TOOL_OPTIONS: "-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005"
       DEEPSEEK_API_KEY: ${DEEPSEEK_API_KEY}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/agent-db
+      SPRING_DATASOURCE_USERNAME: agent
+      SPRING_DATASOURCE_PASSWORD: agent
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: http://otel-collector:4318/v1/traces
+      OTEL_SERVICE_NAME: architecture-compliance-agent
+      OTEL_TRACES_EXPORTER: otlp
+      OTEL_EXPORTER_OTLP_TRACES_PROTOCOL: http/protobuf
+      OTEL_LOGS_EXPORTER: none
+      OTEL_METRICS_EXPORTER: none
+
     depends_on:
-      - n8n
+      n8n:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+      pgvector:
+        condition: service_healthy
+
+
     volumes:
       - "C:/agents/temp_files:/home/temp_files"
+    networks:
+      - agent-network
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: ai-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: agent-db
+      POSTGRES_USER: agent
+      POSTGRES_PASSWORD: agent
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - agent-network
+
+  pgvector:
+    image: pgvector/pgvector:pg16
+    container_name: pgvector
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: architecture
+      POSTGRES_USER: architecture
+      POSTGRES_PASSWORD: architecture
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    volumes:
+      - pgvector_data:/var/lib/postgresql/data
     networks:
       - agent-network
 
@@ -45,9 +108,99 @@ services:
     networks:
       - agent-network
 
+    # =========================================================
+    # OpenTelemetry Collector
+    # =========================================================
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.160.0
+    container_name: otel-collector
+    restart: unless-stopped
+    command:
+      - "--config=/etc/otelcol/config.yml"
+    volumes:
+      - ./otell-collector-config.yml:/etc/otelcol/config.yml:ro
+    expose:
+      - "4317"
+      - "4318"
+    depends_on:
+      phoenix:
+        condition: service_healthy
+    networks:
+      - agent-network
+
+  # =========================================================
+  # Phoenix
+  # =========================================================
+
+  phoenix:
+    image: arizephoenix/phoenix:latest
+    container_name: phoenix
+    restart: unless-stopped
+    ports:
+      - "6006:6006"
+    expose:
+      - "4317"
+    environment:
+      PHOENIX_WORKING_DIR: /mnt/data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/usr/bin/python3.13",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:6006/')"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    volumes:
+      - phoenix_data:/mnt/data
+    networks:
+      - agent-network
+
 volumes:
   aitest01_n8n_data:
     external: true
+  postgres_data:
+    external: true
+  pgvector_data:
+    external: true
+  phoenix_data:
 
 networks:
   agent-network:
+
+
+#  Windows
+#  │
+#  ├──── :8587 ───────────────► ai-agent
+#  │
+#  ├──── :5678 ───────────────► n8n
+#  │
+#  ├──── :5432 ───────────────► postgres
+#  │
+#  └──── :6006 ───────────────► Phoenix UI
+#
+#
+#  Docker agent-network
+#  │
+#  │
+#  ┌───────┴───────┐
+#  │               │
+#  ▼               ▼
+#  ai-agent          postgres
+#  │
+#  │
+#  ├────────────► pgvector
+#  │
+#  ├────────────► n8n
+#  │
+#  │ OTLP HTTP
+#  ▼
+#  otel-collector:4318
+#  │
+#  │ OTLP gRPC
+#  ▼
+#  phoenix:4317

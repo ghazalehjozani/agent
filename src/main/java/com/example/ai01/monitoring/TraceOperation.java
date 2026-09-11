@@ -7,10 +7,9 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface TraceStep {
+public @interface TraceOperation {
     String spanName() default "";
-
     String serviceName() default "";
-
     boolean newSpan() default true;
+    String spanKind() default "CHAIN";
 }
